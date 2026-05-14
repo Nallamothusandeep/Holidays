@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Sandeep Nallamothu • 2026 WFH & Holiday Calendar</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: system-ui, 'Segoe UI', 'Roboto', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%);
+            padding: 1.5rem;
+            min-height: 100vh;
+        }
+
+        .app-container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: rgba(255,255,255,0.5);
+            border-radius: 2rem;
+            padding: 1.2rem 1rem 1.8rem;
+            backdrop-filter: blur(2px);
+        }
+
+        h1 {
+            text-align: center;
+            font-weight: 800;
+            font-size: 2rem;
+            background: linear-gradient(135deg, #1a472a, #2d6a4f);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            margin-bottom: 0.25rem;
+        }
+
+        .subhead {
+            text-align: center;
+            color: #2d6a4f;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            font-size: 0.95rem;
+        }
+
+        .legend {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 2rem;
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(12px);
+            padding: 0.7rem 1.8rem;
+            border-radius: 60px;
+            width: fit-content;
+            margin: 0 auto 2rem auto;
+            box-shadow: 0 6px 14px rgba(0,0,0,0.08);
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #1a3a2e;
+        }
+
+        .box {
+            width: 24px;
+            height: 24px;
+            border-radius: 8px;
+        }
+
+        .weekend-box { background: #2ecc71; background: linear-gradient(145deg, #2ecc71, #27ae60); }
+        .wfh-box { background: #2196f3; background: linear-gradient(145deg, #2196f3, #1976d2); }
+        .holiday-box { background: #e74c3c; background: linear-gradient(145deg, #e74c3c, #c0392b); }
+        .orange-box { background: #ff9800; background: linear-gradient(145deg, #ff9800, #f57c00); }
+        .working-box { background: #95a5a6; background: linear-gradient(145deg, #95a5a6, #7f8c8d); }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 1.6rem;
+        }
+
+        .month-card {
+            background: white;
+            border-radius: 1.6rem;
+            overflow: hidden;
+            box-shadow: 0 12px 28px -8px rgba(0, 0, 0, 0.15);
+            transition: transform 0.2s, box-shadow 0.2s;
+            border: 1px solid rgba(46, 204, 113, 0.15);
+        }
+
+        .month-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 20px 32px -12px rgba(0, 0, 0, 0.2);
+        }
+
+        .month-header {
+            background: linear-gradient(115deg, #1b5e3f, #2d6a4f);
+            color: white;
+            text-align: center;
+            padding: 0.9rem;
+            font-weight: 800;
+            font-size: 1.3rem;
+        }
+
+        .weekdays {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            background: #e8f5e9;
+            text-align: center;
+            font-weight: 700;
+            font-size: 0.7rem;
+            padding: 0.6rem 0;
+            color: #1b5e3f;
+            border-bottom: 1px solid #c8e6c9;
+        }
+
+        .dates {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 6px;
+            padding: 1rem;
+            background: white;
+        }
+
+        .day-cell {
+            aspect-ratio: 1 / 1;
+            min-height: 52px;
+            border-radius: 14px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.9rem;
+            position: relative;
+            transition: all 0.1s ease;
+            cursor: default;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+
+        /* Weekend - GREEN */
+        .weekend-status {
+            background: linear-gradient(135deg, #2ecc71, #27ae60);
+            color: white;
+        }
+
+        /* WFH - BLUE (changed to distinguish from weekends) */
+        .wfh-status {
+            background: linear-gradient(135deg, #2196f3, #1976d2);
+            color: white;
+            box-shadow: 0 2px 8px rgba(33, 150, 243, 0.3);
+        }
+
+        /* Holiday - RED */
+        .holiday-status {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+            box-shadow: 0 2px 8px rgba(231, 76, 60, 0.3);
+        }
+
+        /* 3+ consecutive special days (WFH/Holiday/Weekend) - ORANGE HIGHLIGHT */
+        .streak-highlight {
+            background: linear-gradient(135deg, #ff9800, #f57c00) !important;
+            color: white !important;
+            box-shadow: 0 0 0 3px #ffe0a3, 0 3px 10px rgba(0,0,0,0.2);
+            transform: scale(1.02);
+            font-weight: 800;
+        }
+
+        /* Working day - GRAY */
+        .working-day {
+            background: #ecf0f1;
+            color: #2c3e50;
+            text-shadow: none;
+            box-shadow: inset 0 0 0 1px #d5dbdb;
+        }
+
+        .empty-cell {
+            visibility: hidden;
+            background: transparent !important;
+            box-shadow: none;
+            transform: none;
+        }
+
+        .badge {
+            font-size: 7px;
+            font-weight: 800;
+            background: rgba(0,0,0,0.6);
+            padding: 2px 5px;
+            border-radius: 30px;
+            margin-top: 3px;
+            white-space: nowrap;
+            letter-spacing: 0.3px;
+        }
+
+        .day-number {
+            font-size: 0.95rem;
+            font-weight: 700;
+        }
+
+        @media (max-width: 750px) {
+            body { padding: 0.75rem; }
+            .day-cell { min-height: 44px; font-size: 0.75rem; }
+            .badge { font-size: 5px; padding: 1px 3px; }
+            .day-number { font-size: 0.8rem; }
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 2rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: #2d6a4f;
+            background: rgba(255,255,255,0.8);
+            padding: 0.6rem;
+            border-radius: 40px;
+            width: fit-content;
+            margin-left: auto;
+            margin-right: auto;
+        }
+    </style>
+</head>
+<body>
+<div class="app-container">
+    <h1>📅 Sandeep Nallamothu · 2026</h1>
+    <div class="subhead">Weekends (Green) · WFH (Blue) · Holidays (Red) · 3+ Consecutive = Orange Highlight</div>
+
+    <div class="legend">
+        <div class="legend-item"><div class="box weekend-box"></div> <span>🌿 Saturday / Sunday</span></div>
+        <div class="legend-item"><div class="box wfh-box"></div> <span>🏠 WFH (Work From Home)</span></div>
+        <div class="legend-item"><div class="box holiday-box"></div> <span>🎉 Holiday (Public Holiday)</span></div>
+        <div class="legend-item"><div class="box orange-box"></div> <span>🔥 3+ Consecutive Non-Working Days</span></div>
+        <div class="legend-item"><div class="box working-box"></div> <span>🏢 Working Day (WFO)</span></div>
+    </div>
+
+    <div class="calendar-grid" id="calendarRoot"></div>
+    <footer>📌 Weekends (Sat/Sun) are GREEN. WFH is BLUE. Holidays are RED. 3+ consecutive non-working days = ORANGE highlight.</footer>
+</div>
+
+<script>
+    // ============================================================
+    // WFH DATES (provided by Sandeep)
+    // ============================================================
+    const wfhDatesSet = new Set([
+        // May 2026
+        "2026-05-05", "2026-05-13", "2026-05-22",
+        // June 2026
+        "2026-06-01", "2026-06-11", "2026-06-17", "2026-06-22", "2026-06-30",
+        // July 2026
+        "2026-07-10", "2026-07-16", "2026-07-20", "2026-07-29",
+        // August 2026
+        "2026-08-07", "2026-08-11", "2026-08-17", "2026-08-27",
+        // September 2026
+        "2026-09-04", "2026-09-09", "2026-09-14", "2026-09-22",
+        // October 2026
+        "2026-10-02", "2026-10-08", "2026-10-12", "2026-10-21", "2026-10-30",
+        // November 2026
+        "2026-11-03", "2026-11-09", "2026-11-19", "2026-11-27",
+        // December 2026
+        "2026-12-01", "2026-12-09", "2026-12-14", "2026-12-24", "2026-12-29"
+    ]);
+
+    // ============================================================
+    // HOLIDAYS (Hyderabad public holidays 2026)
+    // ============================================================
+    const holidaysSet = new Set([
+        "2026-01-01",   // New Year
+        "2026-01-26",   // Republic Day
+        "2026-03-19",   // Ugadi
+        "2026-05-01",   // Labour Day
+        "2026-06-02",   // Telangana Formation Day
+        "2026-09-14",   // Vinayaka Chaturthi
+        "2026-10-02",   // Gandhi Jayanti
+        "2026-10-20",   // Dussehra
+        "2026-12-25"    // Christmas
+    ]);
+
+    // Helper to format date
+    function formatYMD(date) {
+        return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    }
+
+    // Check if a date is a weekend (Saturday or Sunday)
+    function isWeekend(date) {
+        const day = date.getDay();
+        return day === 0 || day === 6;
+    }
+
+    // Get status for a date: "WEEKEND", "WFH", "HOLIDAY", or "WORKING"
+    function getStatus(date) {
+        const ymd = formatYMD(date);
+        if (wfhDatesSet.has(ymd)) return "WFH";
+        if (holidaysSet.has(ymd)) return "HOLIDAY";
+        if (isWeekend(date)) return "WEEKEND";
+        return "WORKING";
+    }
+
+    // Check if a date is a non-working day (Weekend, WFH, or Holiday)
+    function isNonWorkingDay(date) {
+        const ymd = formatYMD(date);
+        return isWeekend(date) || wfhDatesSet.has(ymd) || holidaysSet.has(ymd);
+    }
+
+    // ============================================================
+    // DETECT 3+ CONSECUTIVE NON-WORKING DAYS (Weekend/WFH/Holiday)
+    // Returns Set of date strings that are part of a streak of 3+
+    // ============================================================
+    function getConsecutiveStreakSet() {
+        const streakSet = new Set();
+        const startDate = new Date(2026, 0, 1);
+        const endDate = new Date(2026, 11, 31);
+        
+        let currentStreak = [];
+        
+        for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+            const current = new Date(d);
+            const ymd = formatYMD(current);
+            const isNonWorking = isNonWorkingDay(current);
+            
+            if (isNonWorking) {
+                currentStreak.push(ymd);
+            } else {
+                if (currentStreak.length >= 3) {
+                    currentStreak.forEach(date => streakSet.add(date));
+                }
+                currentStreak = [];
+            }
+        }
+        
+        // Check for streak at end of year
+        if (currentStreak.length >= 3) {
+            currentStreak.forEach(date => streakSet.add(date));
+        }
+        
+        return streakSet;
+    }
+
+    const consecutiveStreakSet = getConsecutiveStreakSet();
+
+    // ============================================================
+    // RENDER FULL CALENDAR 2026
+    // ============================================================
+    function renderCalendar() {
+        const container = document.getElementById('calendarRoot');
+        container.innerHTML = '';
+        
+        const monthNames = ["January", "February", "March", "April", "May", "June", 
+                           "July", "August", "September", "October", "November", "December"];
+        
+        for (let month = 0; month < 12; month++) {
+            const year = 2026;
+            const firstDayOfMonth = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            
+            // Create month card
+            const monthCard = document.createElement('div');
+            monthCard.className = 'month-card';
+            
+            // Header
+            const header = document.createElement('div');
+            header.className = 'month-header';
+            header.innerText = `${monthNames[month]} 2026`;
+            
+            // Weekday labels
+            const weekRow = document.createElement('div');
+            weekRow.className = 'weekdays';
+            const weekdays = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+            weekdays.forEach(day => {
+                const daySpan = document.createElement('div');
+                daySpan.innerText = day;
+                weekRow.appendChild(daySpan);
+            });
+            
+            // Dates grid
+            const datesGrid = document.createElement('div');
+            datesGrid.className = 'dates';
+            
+            // Empty cells for days before month starts
+            for (let i = 0; i < firstDayOfMonth; i++) {
+                const emptyCell = document.createElement('div');
+                emptyCell.className = 'day-cell empty-cell';
+                datesGrid.appendChild(emptyCell);
+            }
+            
+            // Fill actual dates
+            for (let day = 1; day <= daysInMonth; day++) {
+                const currentDate = new Date(year, month, day);
+                const ymd = formatYMD(currentDate);
+                const status = getStatus(currentDate);
+                const isInStreak = consecutiveStreakSet.has(ymd);
+                
+                const cell = document.createElement('div');
+                cell.className = 'day-cell';
+                
+                // Day number
+                const numberSpan = document.createElement('div');
+                numberSpan.className = 'day-number';
+                numberSpan.innerText = day;
+                cell.appendChild(numberSpan);
+                
+                // Apply styling based on status
+                if (status === "WFH") {
+                    cell.classList.add('wfh-status');
+                    if (isInStreak) cell.classList.add('streak-highlight');
+                    
+                    const badge = document.createElement('div');
+                    badge.className = 'badge';
+                    badge.innerText = '🏠 WFH';
+                    cell.appendChild(badge);
+                } 
+                else if (status === "HOLIDAY") {
+                    cell.classList.add('holiday-status');
+                    if (isInStreak) cell.classList.add('streak-highlight');
+                    
+                    const badge = document.createElement('div');
+                    badge.className = 'badge';
+                    badge.innerText = '🎉 Holiday';
+                    cell.appendChild(badge);
+                }
+                else if (status === "WEEKEND") {
+                    cell.classList.add('weekend-status');
+                    if (isInStreak) cell.classList.add('streak-highlight');
+                    
+                    const badge = document.createElement('div');
+                    badge.className = 'badge';
+                    badge.innerText = '🌿 Weekend';
+                    cell.appendChild(badge);
+                }
+                else {
+                    cell.classList.add('working-day');
+                }
+                
+                datesGrid.appendChild(cell);
+            }
+            
+            monthCard.appendChild(header);
+            monthCard.appendChild(weekRow);
+            monthCard.appendChild(datesGrid);
+            container.appendChild(monthCard);
+        }
+    }
+    
+    renderCalendar();
+    
+    // Console log for debugging
+    console.log("✅ WFH Dates Count:", wfhDatesSet.size);
+    console.log("✅ Holiday Dates Count:", holidaysSet.size);
+    console.log("✅ Dates in 3+ consecutive non-working streaks:", consecutiveStreakSet.size);
+</script>
+</body>
+</html>
